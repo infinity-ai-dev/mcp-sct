@@ -64,6 +64,8 @@ func (s *Server) ServeHTTP(cfg CloudConfig) error {
 	})
 	mux.Handle("/mcp", handler)
 	mux.Handle("/mcp/", handler)
+	// MCPize gateway sends requests to root path
+	mux.Handle("/", handler)
 
 	server := &http.Server{
 		Addr:         cfg.Address,
