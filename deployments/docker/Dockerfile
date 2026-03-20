@@ -64,6 +64,7 @@ WORKDIR /home/mcp
 # Default environment
 ENV MCP_SCT_MODE=cloud \
     MCP_SCT_ADDR=:8080 \
+    MCP_SCT_NO_AUTH=true \
     MCP_SCT_AI_ENABLED=false \
     MCP_SCT_AI_SCRIPT=/opt/mcp-sct-ai/mcp_sct_ai/server.py \
     MCP_SCT_LOG_LEVEL=info \
