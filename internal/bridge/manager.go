@@ -60,13 +60,8 @@ func (m *Manager) Start(ctx context.Context) error {
 		}
 	}
 
-	// Set up the Python process
-	var cmd *exec.Cmd
-	if m.scriptPath != "" {
-		cmd = exec.CommandContext(ctx, m.pythonPath, m.scriptPath)
-	} else {
-		cmd = exec.CommandContext(ctx, m.pythonPath, "-m", "mcp_sct_ai.server")
-	}
+	// Set up the Python process - always use module mode for relative imports
+	cmd := exec.CommandContext(ctx, m.pythonPath, "-m", "mcp_sct_ai.server")
 
 	cmd.Env = append(os.Environ(),
 		fmt.Sprintf("MCP_SCT_AI_PORT=%d", m.port),
