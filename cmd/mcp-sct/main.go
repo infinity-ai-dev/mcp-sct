@@ -190,23 +190,15 @@ func main() {
 	case "cloud", "http":
 		tokenStore := auth.NewInMemoryTokenStore()
 
-		// Create a default admin token for cloud mode
-		enableAuth := true
-		log.Printf("DEBUG: MCP_SCT_NO_AUTH=%q MCP_SCT_ADMIN_TOKEN=%q", os.Getenv("MCP_SCT_NO_AUTH"), os.Getenv("MCP_SCT_ADMIN_TOKEN"))
-		if envToken := os.Getenv("MCP_SCT_ADMIN_TOKEN"); envToken != "" {
-			// Register the fixed token in the store
+		// Auth is only enabled if MCP_SCT_ADMIN_TOKEN is explicitly set.
+		// On MCPize/cloud platforms, the gateway handles auth so internal auth is off by default.
+		enableAuth := false
+		if envToken := os.Getenv("MCP_SCT_ADMIN_TOKEN"); envToken != "" && len(envToken) > 10 && envToken[:4] == "mcp_" {
 			tokenStore.RegisterFixed(envToken, "default", "admin")
+			enableAuth = true
 			log.Println("Using MCP_SCT_ADMIN_TOKEN for authentication")
-		} else if noAuth := os.Getenv("MCP_SCT_NO_AUTH"); noAuth == "true" || noAuth == "1" || noAuth == `"true"` {
-			enableAuth = false
-			log.Println("WARNING: Authentication disabled (MCP_SCT_NO_AUTH=true)")
 		} else {
-			raw, _, err := tokenStore.Create("default", "admin", []string{"*"}, 0)
-			if err != nil {
-				log.Fatalf("Failed to create admin token: %v", err)
-			}
-			log.Printf("Generated admin token: %s", raw)
-			log.Println("Set MCP_SCT_ADMIN_TOKEN env var to use a fixed token")
+			log.Println("Internal auth disabled (gateway handles authentication)")
 		}
 
 		cloudCfg := server.CloudConfig{
