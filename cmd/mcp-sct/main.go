@@ -192,11 +192,12 @@ func main() {
 
 		// Create a default admin token for cloud mode
 		enableAuth := true
+		log.Printf("DEBUG: MCP_SCT_NO_AUTH=%q MCP_SCT_ADMIN_TOKEN=%q", os.Getenv("MCP_SCT_NO_AUTH"), os.Getenv("MCP_SCT_ADMIN_TOKEN"))
 		if envToken := os.Getenv("MCP_SCT_ADMIN_TOKEN"); envToken != "" {
 			// Register the fixed token in the store
 			tokenStore.RegisterFixed(envToken, "default", "admin")
 			log.Println("Using MCP_SCT_ADMIN_TOKEN for authentication")
-		} else if os.Getenv("MCP_SCT_NO_AUTH") == "true" {
+		} else if noAuth := os.Getenv("MCP_SCT_NO_AUTH"); noAuth == "true" || noAuth == "1" || noAuth == `"true"` {
 			enableAuth = false
 			log.Println("WARNING: Authentication disabled (MCP_SCT_NO_AUTH=true)")
 		} else {
