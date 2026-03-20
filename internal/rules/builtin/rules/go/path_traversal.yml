@@ -1,0 +1,53 @@
+id: go-path-traversal
+version: "1.0"
+languages: [go]
+severity: HIGH
+category: path-traversal
+cwe: CWE-22
+owasp: "A01:2021"
+confidence: 0.75
+message: >
+  Potential path traversal vulnerability. User input used in file paths
+  without validation can allow access to arbitrary files on the server.
+
+patterns:
+  - pattern: 'os\.Open\(.*\+|os\.Open\(.*fmt\.Sprintf'
+    type: regex
+  - pattern: 'os\.ReadFile\(.*\+|os\.ReadFile\(.*fmt\.Sprintf'
+    type: regex
+  - pattern: 'filepath\.Join\(.*r\.|filepath\.Join\(.*req\.'
+    type: regex
+  - pattern: 'http\.ServeFile\(.*r\.'
+    type: regex
+  - pattern: 'ioutil\.ReadFile\(.*\+'
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*//'
+    type: regex
+  - pattern: 'filepath\.Clean|filepath\.Abs|path\.Clean'
+    type: regex
+  - pattern: 'strings\.Contains.*\.\.'
+    type: regex
+
+fix_template: |
+  Validate and sanitize file paths:
+
+  BAD:  os.Open(filepath.Join(baseDir, userInput))
+  GOOD:
+    cleanPath := filepath.Clean(userInput)
+    if strings.Contains(cleanPath, "..") {
+      return errors.New("invalid path")
+    }
+    fullPath := filepath.Join(baseDir, cleanPath)
+    if !strings.HasPrefix(fullPath, baseDir) {
+      return errors.New("path traversal attempt")
+    }
+    os.Open(fullPath)
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/Path_Traversal_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [path-traversal, file, directory, owasp-top10]

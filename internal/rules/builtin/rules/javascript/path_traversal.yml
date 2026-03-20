@@ -1,0 +1,54 @@
+id: js-path-traversal
+version: "1.0"
+languages: [javascript, typescript]
+severity: HIGH
+category: path-traversal
+cwe: CWE-22
+owasp: "A01:2021"
+confidence: 0.70
+message: >
+  Potential path traversal. User input in file paths without validation
+  can allow access to arbitrary files on the server.
+
+patterns:
+  - pattern: 'fs\.(readFile|readFileSync|writeFile|writeFileSync)\(.*req\.'
+    type: regex
+  - pattern: 'fs\.(readFile|readFileSync|writeFile|writeFileSync)\(.*\+'
+    type: regex
+  - pattern: 'path\.join\(.*req\.(body|query|params)'
+    type: regex
+  - pattern: 'res\.sendFile\(.*req\.'
+    type: regex
+  - pattern: 'express\.static\(.*req\.'
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*//'
+    type: regex
+  - pattern: 'path\.normalize|path\.resolve'
+    type: regex
+  - pattern: '\.includes\(\x27\.\.\x27\)|\.includes\("\.\."'
+    type: regex
+
+fix_template: |
+  Validate file paths:
+
+  BAD:  fs.readFile(path.join(uploadDir, req.params.filename))
+
+  GOOD:
+  const safePath = path.normalize(req.params.filename);
+  if (safePath.includes("..")) {
+    return res.status(400).send("Invalid path");
+  }
+  const fullPath = path.resolve(uploadDir, safePath);
+  if (!fullPath.startsWith(path.resolve(uploadDir))) {
+    return res.status(403).send("Access denied");
+  }
+  fs.readFile(fullPath, callback);
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/Path_Traversal_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [path-traversal, file, directory, owasp-top10]

@@ -1,0 +1,45 @@
+id: java-xxe
+version: "1.0"
+languages: [java]
+severity: HIGH
+category: xxe
+cwe: CWE-611
+owasp: "A05:2021"
+confidence: 0.80
+message: >
+  Potential XML External Entity (XXE) vulnerability. XML parsers without
+  disabled external entities can allow file disclosure or SSRF attacks.
+
+patterns:
+  - pattern: 'DocumentBuilderFactory\.newInstance\(\)'
+    type: regex
+  - pattern: 'SAXParserFactory\.newInstance\(\)'
+    type: regex
+  - pattern: 'XMLInputFactory\.newInstance\(\)'
+    type: regex
+  - pattern: 'TransformerFactory\.newInstance\(\)'
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*//'
+    type: regex
+  - pattern: 'setFeature.*disallow-doctype-decl.*true'
+    type: regex
+  - pattern: 'setFeature.*external-general-entities.*false'
+    type: regex
+
+fix_template: |
+  Disable external entities in XML parsers:
+
+  DocumentBuilderFactory:
+  DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+  dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+  dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+  dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [xxe, xml, owasp-top10]

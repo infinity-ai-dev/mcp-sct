@@ -1,0 +1,51 @@
+id: python-insecure-deserialization
+version: "1.0"
+languages: [python]
+severity: CRITICAL
+category: deserialization
+cwe: CWE-502
+owasp: "A08:2021"
+confidence: 0.85
+message: >
+  Insecure deserialization detected. pickle.loads() and yaml.load() can execute
+  arbitrary code when processing untrusted data.
+
+patterns:
+  - pattern: 'pickle\.loads?\('
+    type: regex
+  - pattern: 'cPickle\.loads?\('
+    type: regex
+  - pattern: 'yaml\.load\('
+    type: regex
+  - pattern: 'yaml\.unsafe_load\('
+    type: regex
+  - pattern: 'shelve\.open\('
+    type: regex
+  - pattern: 'marshal\.loads?\('
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*#'
+    type: regex
+  - pattern: 'yaml\.safe_load'
+    type: regex
+  - pattern: 'Loader\s*=\s*yaml\.SafeLoader'
+    type: regex
+
+fix_template: |
+  Use safe alternatives:
+
+  pickle -> JSON:
+  BAD:  data = pickle.loads(untrusted_input)
+  GOOD: data = json.loads(untrusted_input)
+
+  YAML:
+  BAD:  data = yaml.load(content)
+  GOOD: data = yaml.safe_load(content)
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [deserialization, pickle, yaml, owasp-top10]

@@ -1,0 +1,48 @@
+id: js-sqli-string-concat
+version: "1.0"
+languages: [javascript, typescript]
+severity: CRITICAL
+category: injection
+cwe: CWE-89
+owasp: "A03:2021"
+confidence: 0.85
+message: >
+  SQL query constructed using string concatenation or template literals.
+  Use parameterized queries to prevent SQL injection.
+
+patterns:
+  - pattern: 'query\(`.*\$\{.*\}`'
+    type: regex
+  - pattern: 'query\(["\x27].*\+.*\+.*["\x27]\)'
+    type: regex
+  - pattern: 'execute\(`.*\$\{.*\}`'
+    type: regex
+  - pattern: 'raw\(`.*\$\{.*\}`'
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*//'
+    type: regex
+  - pattern: 'query\(.*,\s*\['
+    type: regex
+
+fix_template: |
+  Use parameterized queries:
+
+  BAD:  db.query(`SELECT * FROM users WHERE id = ${userId}`)
+  GOOD: db.query("SELECT * FROM users WHERE id = $1", [userId])
+
+  Sequelize:
+  BAD:  sequelize.query(`SELECT * FROM users WHERE name = '${name}'`)
+  GOOD: sequelize.query("SELECT * FROM users WHERE name = ?", { replacements: [name] })
+
+  Knex:
+  GOOD: knex("users").where("id", userId)
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"
+  - "https://node-postgres.com/features/queries#parameterized-query"
+
+metadata:
+  author: MCP-SCT
+  tags: [sql, injection, database, node, owasp-top10]

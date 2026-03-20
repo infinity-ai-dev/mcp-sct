@@ -1,0 +1,44 @@
+id: go-error-info-leak
+version: "1.0"
+languages: [go]
+severity: MEDIUM
+category: information-disclosure
+cwe: CWE-209
+owasp: "A04:2021"
+confidence: 0.65
+message: >
+  Error details may be exposed to users. Writing raw error messages to HTTP
+  responses can leak internal system information to attackers.
+
+patterns:
+  - pattern: 'http\.Error\(w,\s*err\.Error\(\)'
+    type: regex
+  - pattern: 'fmt\.Fprintf\(w,.*err\)'
+    type: regex
+  - pattern: 'json\..*err\.Error\(\)'
+    type: regex
+  - pattern: 'w\.Write\(.*err\.Error\(\)'
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*//'
+    type: regex
+  - pattern: '_test\.go'
+    type: regex
+
+fix_template: |
+  Return generic error messages to users, log details server-side:
+
+  BAD:
+  http.Error(w, err.Error(), http.StatusInternalServerError)
+
+  GOOD:
+  log.Printf("internal error: %v", err)
+  http.Error(w, "internal server error", http.StatusInternalServerError)
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [error, information-disclosure, owasp-top10]

@@ -1,0 +1,49 @@
+id: python-ssrf
+version: "1.0"
+languages: [python]
+severity: HIGH
+category: ssrf
+cwe: CWE-918
+owasp: "A10:2021"
+confidence: 0.65
+message: >
+  Potential Server-Side Request Forgery (SSRF). User-controlled URLs passed to
+  HTTP request functions can allow attackers to access internal services.
+
+patterns:
+  - pattern: 'requests\.get\(.*request\.|requests\.get\(.*input\('
+    type: regex
+  - pattern: 'requests\.post\(.*request\.|requests\.post\(.*input\('
+    type: regex
+  - pattern: 'urllib\.request\.urlopen\(.*request\.'
+    type: regex
+  - pattern: 'httpx\.(get|post|put)\(.*request\.'
+    type: regex
+  - pattern: 'aiohttp\..*\.get\(.*request\.'
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*#'
+    type: regex
+
+fix_template: |
+  Validate URLs before making requests:
+
+  1. Parse and validate the URL scheme (only allow http/https)
+  2. Resolve DNS and block private/internal IPs (10.x, 172.16.x, 192.168.x, 127.x)
+  3. Use an allowlist of permitted domains
+  4. Don't follow redirects blindly
+
+  Example:
+  from urllib.parse import urlparse
+  parsed = urlparse(user_url)
+  if parsed.scheme not in ("http", "https"):
+      raise ValueError("Invalid scheme")
+  # Check resolved IP against blocklist before requesting
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [ssrf, http, request, owasp-top10]

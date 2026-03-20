@@ -1,0 +1,43 @@
+id: go-command-injection
+version: "1.0"
+languages: [go]
+severity: CRITICAL
+category: injection
+cwe: CWE-78
+owasp: "A03:2021"
+confidence: 0.80
+message: >
+  Potential command injection. User input passed to exec.Command with shell
+  invocation can allow arbitrary command execution.
+
+patterns:
+  - pattern: 'exec\.Command\(\s*"sh"\s*,\s*"-c"'
+    type: regex
+  - pattern: 'exec\.Command\(\s*"bash"\s*,\s*"-c"'
+    type: regex
+  - pattern: 'exec\.Command\(\s*"/bin/sh"'
+    type: regex
+  - pattern: 'exec\.Command\(.*fmt\.Sprintf'
+    type: regex
+  - pattern: 'exec\.Command\(.*\+\s*\w'
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*//'
+    type: regex
+
+fix_template: |
+  Avoid shell invocation. Pass arguments separately:
+
+  BAD:  exec.Command("sh", "-c", "ls " + userInput)
+  GOOD: exec.Command("ls", userInput)
+
+  BAD:  exec.Command("sh", "-c", fmt.Sprintf("grep %s file.txt", input))
+  GOOD: exec.Command("grep", input, "file.txt")
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [command-injection, exec, shell, owasp-top10]

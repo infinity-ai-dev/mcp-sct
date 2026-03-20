@@ -1,0 +1,57 @@
+id: js-xss-dom
+version: "1.0"
+languages: [javascript, typescript]
+severity: HIGH
+category: xss
+cwe: CWE-79
+owasp: "A03:2021"
+confidence: 0.80
+message: >
+  Potential DOM-based XSS. Setting innerHTML or using document.write with
+  dynamic content can allow script injection attacks.
+
+patterns:
+  - pattern: '\.innerHTML\s*=\s*[^"\x27]'
+    type: regex
+  - pattern: '\.innerHTML\s*=\s*`'
+    type: regex
+  - pattern: '\.innerHTML\s*\+='
+    type: regex
+  - pattern: 'document\.write\('
+    type: regex
+  - pattern: 'document\.writeln\('
+    type: regex
+  - pattern: '\.outerHTML\s*='
+    type: regex
+  - pattern: '\.insertAdjacentHTML\('
+    type: regex
+  - pattern: 'dangerouslySetInnerHTML'
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*//'
+    type: regex
+  - pattern: 'DOMPurify\.sanitize'
+    type: regex
+  - pattern: 'sanitize\('
+    type: regex
+
+fix_template: |
+  Use safe DOM manipulation methods:
+
+  BAD:  element.innerHTML = userInput
+  GOOD: element.textContent = userInput
+
+  React:
+  BAD:  <div dangerouslySetInnerHTML={{__html: userInput}} />
+  GOOD: <div>{userInput}</div>
+
+  If HTML is required, sanitize first:
+  GOOD: element.innerHTML = DOMPurify.sanitize(userInput)
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/DOM_based_XSS_Prevention_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [xss, dom, html, react, owasp-top10]

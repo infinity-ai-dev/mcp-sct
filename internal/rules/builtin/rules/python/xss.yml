@@ -1,0 +1,49 @@
+id: python-xss-template
+version: "1.0"
+languages: [python]
+severity: HIGH
+category: xss
+cwe: CWE-79
+owasp: "A03:2021"
+confidence: 0.75
+message: >
+  Potential Cross-Site Scripting (XSS). User input rendered in HTML without
+  proper escaping can allow attackers to inject malicious scripts.
+
+patterns:
+  - pattern: 'Markup\(.*\+|Markup\(f["\x27]|Markup\(.*\.format\('
+    type: regex
+  - pattern: 'mark_safe\(.*\+|mark_safe\(f["\x27]|mark_safe\(.*\.format\('
+    type: regex
+  - pattern: '\|safe\}'
+    type: regex
+  - pattern: 'render_template_string\(.*\+|render_template_string\(f["\x27]'
+    type: regex
+  - pattern: 'innerHTML\s*='
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*#'
+    type: regex
+
+fix_template: |
+  Always escape user input before rendering in HTML:
+
+  Flask/Jinja2:
+  BAD:  Markup(f"<p>{user_input}</p>")
+  GOOD: Markup("<p>%s</p>") % Markup.escape(user_input)
+
+  Django:
+  BAD:  mark_safe(f"<p>{user_input}</p>")
+  GOOD: format_html("<p>{}</p>", user_input)
+
+  Templates:
+  BAD:  {{ variable|safe }}
+  GOOD: {{ variable }}  (auto-escaped by default)
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [xss, html, template, owasp-top10]

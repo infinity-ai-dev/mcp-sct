@@ -1,0 +1,45 @@
+id: js-command-injection
+version: "1.0"
+languages: [javascript, typescript]
+severity: CRITICAL
+category: injection
+cwe: CWE-78
+owasp: "A03:2021"
+confidence: 0.80
+message: >
+  Potential command injection via child_process. User-controlled input
+  passed to shell commands can allow arbitrary command execution.
+
+patterns:
+  - pattern: 'exec\(`.*\$\{|exec\(.*\+.*\+'
+    type: regex
+  - pattern: 'execSync\(`.*\$\{|execSync\(.*\+'
+    type: regex
+  - pattern: 'spawn\(.*shell\s*:\s*true'
+    type: regex
+  - pattern: 'child_process.*exec\('
+    type: regex
+  - pattern: 'eval\(.*req\.|eval\(.*request\.'
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*//'
+    type: regex
+
+fix_template: |
+  Use execFile or spawn without shell:
+
+  BAD:  exec(`ls ${userInput}`)
+  GOOD: execFile("ls", [userInput])
+
+  BAD:  spawn("sh", ["-c", cmd], { shell: true })
+  GOOD: spawn("command", [arg1, arg2], { shell: false })
+
+  Never use eval() with user input.
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [command-injection, node, child_process, owasp-top10]

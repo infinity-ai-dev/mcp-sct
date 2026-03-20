@@ -1,0 +1,109 @@
+version: "3.7"
+
+# Stack MCP-SCT - Security Code Testing
+# Domínio: mcp.sct.mayacrm.shop
+# Deploy: docker stack deploy -c stack-mcp-sct.yml mcp_sct
+
+services:
+  #########################################################
+  # MCP-SCT Server (Cloud Mode - HTTP Transport) ##########
+  #########################################################
+  mcp_sct_server:
+    image: infinitytools/mcp-sct:latest
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    networks:
+      - network_public
+    environment:
+      #########################################################
+      # Configuração do MCP-SCT ###############################
+      #########################################################
+      # Modo de execução: cloud (HTTP) ou stdio (CLI)
+      - MCP_SCT_MODE=cloud
+      # Endereço HTTP interno (Traefik faz o proxy)
+      - MCP_SCT_ADDR=:8080
+      #########################################################
+      # Configuração de Autenticação ##########################
+      #########################################################
+      # Token fixo para autenticação
+      # Clientes enviam: Authorization: Bearer <token>
+      - MCP_SCT_ADMIN_TOKEN=mcp_a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2
+      #########################################################
+      # Configuração do Banco de Dados ########################
+      # PostgreSQL já deployado na stack existente ############
+      #########################################################
+      # Host do PostgreSQL (nome do service na network_public)
+      - DB_HOST=postgres
+      # Porta do PostgreSQL
+      - DB_PORT=5432
+      # Nome do banco de dados (será criado automaticamente)
+      - DB_NAME=mcp_sct
+      # Usuário do banco
+      - DB_USER=postgres
+      # Senha do banco
+      - DB_PASSWORD=7y8auHScpUTrQWhjbrlu8yc0RzNib2wn
+      # SSL mode do PostgreSQL
+      - DB_SSLMODE=disable
+      #########################################################
+      # Configuração do Scanner ###############################
+      #########################################################
+      - MCP_SCT_SEVERITY_THRESHOLD=LOW
+      - MCP_SCT_BUILTIN_RULES=true
+      #########################################################
+      # Configuração do AI Bridge (opcional) ##################
+      #########################################################
+      - MCP_SCT_AI_ENABLED=false
+      # - OPENAI_API_KEY=sk-...
+      # - ANTHROPIC_API_KEY=sk-ant-...
+      # - OLLAMA_HOST=http://ollama:11434
+      #########################################################
+      # Logging e Timezone ####################################
+      #########################################################
+      - MCP_SCT_LOG_LEVEL=info
+      - TZ=America/Sao_Paulo
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+      labels:
+        #########################################################
+        # Configuração do Traefik ###############################
+        #########################################################
+        - traefik.enable=true
+        - traefik.http.routers.mcp_sct_server.rule=Host(`mcp.sct.mayacrm.shop`)
+        - traefik.http.routers.mcp_sct_server.entrypoints=websecure
+        - traefik.http.routers.mcp_sct_server.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.mcp_sct_server.service=mcp_sct_server
+        - traefik.http.services.mcp_sct_server.loadbalancer.server.port=8080
+        - traefik.http.services.mcp_sct_server.loadbalancer.passHostHeader=true
+        #########################################################
+        # Middleware: Headers de Segurança ######################
+        #########################################################
+        - traefik.http.routers.mcp_sct_server.middlewares=mcp-sct-headers@docker
+        - traefik.http.middlewares.mcp-sct-headers.headers.customResponseHeaders.X-Content-Type-Options=nosniff
+        - traefik.http.middlewares.mcp-sct-headers.headers.customResponseHeaders.X-Frame-Options=DENY
+        - traefik.http.middlewares.mcp-sct-headers.headers.customResponseHeaders.X-XSS-Protection=1; mode=block
+        - traefik.http.middlewares.mcp-sct-headers.headers.customResponseHeaders.Strict-Transport-Security=max-age=31536000; includeSubDomains
+      update_config:
+        parallelism: 1
+        delay: 15s
+        order: start-first
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 5
+        window: 60s
+
+networks:
+  network_public:
+    name: network_public
+    external: true

@@ -1,0 +1,41 @@
+id: js-regex-dos
+version: "1.0"
+languages: [javascript, typescript]
+severity: MEDIUM
+category: dos
+cwe: CWE-1333
+owasp: "A06:2021"
+confidence: 0.60
+message: >
+  Potentially vulnerable regular expression (ReDoS). Nested quantifiers
+  or overlapping alternations with user input can cause catastrophic backtracking.
+
+patterns:
+  - pattern: 'new RegExp\(.*req\.|new RegExp\(.*input'
+    type: regex
+  - pattern: 'RegExp\(.*\+|RegExp\(.*\$\{'
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*//'
+    type: regex
+  - pattern: 'escape\(|sanitize\('
+    type: regex
+
+fix_template: |
+  Avoid constructing RegExp from user input:
+
+  BAD:  new RegExp(req.query.pattern)
+  GOOD: Use a safe regex library like re2 or validate the pattern first
+
+  If regex from user input is needed:
+  1. Set a timeout
+  2. Limit input length
+  3. Use re2 (linear time matching)
+
+references:
+  - "https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS"
+
+metadata:
+  author: MCP-SCT
+  tags: [regex, dos, redos]

@@ -1,0 +1,37 @@
+id: python-insecure-random
+version: "1.0"
+languages: [python]
+severity: MEDIUM
+category: cryptography
+cwe: CWE-330
+owasp: "A02:2021"
+confidence: 0.70
+message: >
+  Use of insecure random number generator for security-sensitive operations.
+  The random module is predictable; use secrets or os.urandom for security.
+
+patterns:
+  - pattern: 'random\.(randint|random|choice|randrange|sample)\('
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*#'
+    type: regex
+  - pattern: 'import random'
+    type: regex
+  - pattern: 'seed\(|shuffle\('
+    type: regex
+
+fix_template: |
+  Use the secrets module for security-sensitive randomness:
+
+  BAD:  token = random.randint(100000, 999999)
+  GOOD: token = secrets.token_urlsafe(32)
+  GOOD: code = secrets.randbelow(1000000)
+
+references:
+  - "https://docs.python.org/3/library/secrets.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [random, crypto, security]

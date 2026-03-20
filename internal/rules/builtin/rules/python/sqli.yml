@@ -1,0 +1,45 @@
+id: python-sqli-string-format
+version: "1.0"
+languages: [python]
+severity: CRITICAL
+category: injection
+cwe: CWE-89
+owasp: "A03:2021"
+confidence: 0.85
+message: >
+  SQL query constructed using string formatting with potential user input.
+  Use parameterized queries to prevent SQL injection.
+
+patterns:
+  - pattern: 'cursor\.execute\(f["\x27]'
+    type: regex
+  - pattern: 'cursor\.execute\(["\x27].*%s.*["\x27]\s*%'
+    type: regex
+  - pattern: 'cursor\.execute\(.*\.format\('
+    type: regex
+  - pattern: 'execute\(["\x27].*\+.*\+.*["\x27]\)'
+    type: regex
+
+exclude_patterns:
+  - pattern: 'cursor\.execute\(.*,\s*[\[\(]'
+    type: regex
+  - pattern: '^\s*#'
+    type: regex
+
+fix_template: |
+  Use parameterized queries instead of string formatting:
+
+  BAD:  cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")
+  GOOD: cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+
+  For SQLAlchemy:
+  BAD:  db.execute(f"SELECT * FROM users WHERE name = '{name}'")
+  GOOD: db.execute(text("SELECT * FROM users WHERE name = :name"), {"name": name})
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"
+  - "https://docs.python.org/3/library/sqlite3.html#sqlite3-placeholders"
+
+metadata:
+  author: MCP-SCT
+  tags: [sql, injection, database, owasp-top10]

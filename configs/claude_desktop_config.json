@@ -1,0 +1,32 @@
+{
+  "_comment": "Exemplos de configuração do MCP-SCT para Claude Desktop / Claude Code",
+
+  "mcpServers": {
+    "_comment_local": "=== Modo Local (stdio) - roda como subprocess ===",
+
+    "mcp-sct-local": {
+      "command": "/path/to/mcp-sct",
+      "args": [],
+      "env": {}
+    },
+
+    "mcp-sct-local-ai": {
+      "command": "/path/to/mcp-sct",
+      "args": ["--ai"],
+      "env": {
+        "OPENAI_API_KEY": "sk-...",
+        "MCP_SCT_PYTHON_PATH": "/path/to/python/.venv/bin/python3",
+        "MCP_SCT_AI_SCRIPT": "/path/to/python/src/mcp_sct_ai/server.py"
+      }
+    },
+
+    "_comment_cloud": "=== Modo Cloud (HTTP) - conecta ao servidor remoto ===",
+
+    "mcp-sct-cloud": {
+      "url": "https://mcp.sct.mayacrm.shop/mcp",
+      "headers": {
+        "Authorization": "Bearer mcp_SEU_TOKEN_AQUI"
+      }
+    }
+  }
+}

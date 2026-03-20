@@ -1,0 +1,42 @@
+id: python-open-redirect
+version: "1.0"
+languages: [python]
+severity: MEDIUM
+category: redirect
+cwe: CWE-601
+owasp: "A01:2021"
+confidence: 0.65
+message: >
+  Potential open redirect. User-controlled input used in redirect URL
+  can send users to malicious sites for phishing attacks.
+
+patterns:
+  - pattern: 'redirect\(.*request\.'
+    type: regex
+  - pattern: 'HttpResponseRedirect\(.*request\.'
+    type: regex
+  - pattern: 'redirect_to\s*=\s*request\.'
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*#'
+    type: regex
+  - pattern: 'url_has_allowed_host|is_safe_url|validate_redirect'
+    type: regex
+
+fix_template: |
+  Validate redirect URLs against an allowlist:
+
+  Django:
+  from django.utils.http import url_has_allowed_host_and_scheme
+  next_url = request.GET.get("next", "/")
+  if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+      next_url = "/"
+  return redirect(next_url)
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [redirect, phishing, owasp-top10]

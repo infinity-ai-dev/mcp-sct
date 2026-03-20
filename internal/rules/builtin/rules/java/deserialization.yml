@@ -1,0 +1,47 @@
+id: java-insecure-deserialization
+version: "1.0"
+languages: [java]
+severity: CRITICAL
+category: deserialization
+cwe: CWE-502
+owasp: "A08:2021"
+confidence: 0.80
+message: >
+  Insecure deserialization detected. ObjectInputStream.readObject() with
+  untrusted data can lead to remote code execution.
+
+patterns:
+  - pattern: 'ObjectInputStream.*readObject\('
+    type: regex
+  - pattern: 'readUnshared\('
+    type: regex
+  - pattern: 'XMLDecoder'
+    type: regex
+  - pattern: 'XStream.*fromXML\('
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*//'
+    type: regex
+  - pattern: 'ObjectInputFilter|ValidatingObjectInputStream'
+    type: regex
+
+fix_template: |
+  Avoid Java native deserialization with untrusted data:
+
+  1. Use JSON (Jackson, Gson) instead of ObjectInputStream
+  2. If serialization is required, use ObjectInputFilter (Java 9+):
+
+  ObjectInputFilter filter = ObjectInputFilter.Config.createFilter(
+      "com.myapp.*;!*"
+  );
+  ois.setObjectInputFilter(filter);
+
+  3. Or use ValidatingObjectInputStream from Apache Commons IO
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [deserialization, rce, owasp-top10]

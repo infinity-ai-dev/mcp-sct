@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-sct
+  labels:
+    app: mcp-sct
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mcp-sct
+  template:
+    metadata:
+      labels:
+        app: mcp-sct
+    spec:
+      containers:
+        - name: mcp-sct
+          image: mcp-sct:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: MCP_SCT_MODE
+              value: "cloud"
+            - name: MCP_SCT_ADDR
+              value: ":8080"
+            - name: MCP_SCT_ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-sct-secrets
+                  key: admin-token
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-sct
+  labels:
+    app: mcp-sct
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app: mcp-sct

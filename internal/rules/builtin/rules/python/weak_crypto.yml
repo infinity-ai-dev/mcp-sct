@@ -1,0 +1,51 @@
+id: python-weak-crypto
+version: "1.0"
+languages: [python]
+severity: MEDIUM
+category: cryptography
+cwe: CWE-327
+owasp: "A02:2021"
+confidence: 0.75
+message: >
+  Weak or deprecated cryptographic algorithm detected. MD5 and SHA-1 are
+  broken for security purposes. Use SHA-256+ or bcrypt/argon2 for passwords.
+
+patterns:
+  - pattern: 'hashlib\.md5\('
+    type: regex
+  - pattern: 'hashlib\.sha1\('
+    type: regex
+  - pattern: 'md5\.new\('
+    type: regex
+  - pattern: 'DES\.new\(|DES3\.new\('
+    type: regex
+  - pattern: 'ARC4\.new\(|RC4'
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*#'
+    type: regex
+  - pattern: 'checksum|fingerprint|etag|cache'
+    type: regex
+
+fix_template: |
+  Use strong cryptographic algorithms:
+
+  Hashing:
+  BAD:  hashlib.md5(data).hexdigest()
+  GOOD: hashlib.sha256(data).hexdigest()
+
+  Passwords:
+  BAD:  hashlib.sha256(password.encode()).hexdigest()
+  GOOD: bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+
+  Encryption:
+  BAD:  DES.new(key, DES.MODE_ECB)
+  GOOD: AES.new(key, AES.MODE_GCM, nonce=nonce)
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [crypto, hash, encryption, owasp-top10]

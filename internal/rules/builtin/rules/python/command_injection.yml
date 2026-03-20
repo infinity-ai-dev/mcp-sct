@@ -1,0 +1,51 @@
+id: python-command-injection
+version: "1.0"
+languages: [python]
+severity: CRITICAL
+category: injection
+cwe: CWE-78
+owasp: "A03:2021"
+confidence: 0.80
+message: >
+  Potential OS command injection. User input passed to shell execution functions
+  can allow attackers to execute arbitrary system commands.
+
+patterns:
+  - pattern: 'os\.system\(.*\+|os\.system\(f["\x27]|os\.system\(.*\.format\('
+    type: regex
+  - pattern: 'os\.popen\(.*\+|os\.popen\(f["\x27]|os\.popen\(.*\.format\('
+    type: regex
+  - pattern: 'subprocess\.call\(.*shell\s*=\s*True'
+    type: regex
+  - pattern: 'subprocess\.run\(.*shell\s*=\s*True'
+    type: regex
+  - pattern: 'subprocess\.Popen\(.*shell\s*=\s*True'
+    type: regex
+  - pattern: 'eval\(.*input\(|eval\(.*request\.'
+    type: regex
+  - pattern: 'exec\(.*input\(|exec\(.*request\.'
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*#'
+    type: regex
+
+fix_template: |
+  Avoid passing user input to shell commands. Use safer alternatives:
+
+  BAD:  os.system(f"ping {user_input}")
+  GOOD: subprocess.run(["ping", user_input], shell=False)
+
+  BAD:  subprocess.call(cmd, shell=True)
+  GOOD: subprocess.call(shlex.split(cmd), shell=False)
+
+  For eval/exec:
+  BAD:  eval(user_input)
+  GOOD: Use ast.literal_eval() for data, or a proper parser for expressions.
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [command-injection, os, shell, owasp-top10]

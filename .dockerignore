@@ -1,0 +1,14 @@
+.git
+bin/
+mcp-sct
+python/.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.eggs/
+*.test
+*.out
+.env
+*.log
+.DS_Store
+testdata/

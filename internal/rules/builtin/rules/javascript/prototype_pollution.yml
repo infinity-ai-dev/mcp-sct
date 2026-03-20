@@ -1,0 +1,57 @@
+id: js-prototype-pollution
+version: "1.0"
+languages: [javascript, typescript]
+severity: HIGH
+category: injection
+cwe: CWE-1321
+owasp: "A03:2021"
+confidence: 0.70
+message: >
+  Potential prototype pollution vulnerability. Merging or assigning user-controlled
+  objects without validation can modify Object.prototype and affect application behavior.
+
+patterns:
+  - pattern: 'Object\.assign\(.*req\.|Object\.assign\(.*body'
+    type: regex
+  - pattern: '\.__proto__'
+    type: regex
+  - pattern: '\["__proto__"\]|\[''__proto__''\]'
+    type: regex
+  - pattern: '\.constructor\.prototype'
+    type: regex
+  - pattern: 'merge\(.*req\.|deepMerge\(.*req\.'
+    type: regex
+  - pattern: 'lodash\.merge\(.*req\.|_\.merge\(.*req\.'
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*//'
+    type: regex
+  - pattern: 'Object\.freeze|Object\.seal'
+    type: regex
+
+fix_template: |
+  Validate and sanitize objects before merging:
+
+  BAD:  Object.assign(config, req.body)
+  GOOD: Object.assign(config, sanitize(req.body))
+
+  Filter dangerous keys:
+  function sanitize(obj) {
+    const clean = {};
+    for (const key of Object.keys(obj)) {
+      if (key !== "__proto__" && key !== "constructor" && key !== "prototype") {
+        clean[key] = obj[key];
+      }
+    }
+    return clean;
+  }
+
+  Or use Map instead of plain objects for user data.
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/Prototype_Pollution_Prevention_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [prototype-pollution, object, merge, owasp-top10]

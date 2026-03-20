@@ -1,0 +1,47 @@
+id: java-log-injection
+version: "1.0"
+languages: [java]
+severity: MEDIUM
+category: injection
+cwe: CWE-117
+owasp: "A09:2021"
+confidence: 0.65
+message: >
+  Potential log injection. User input in log messages without sanitization
+  can allow log forging, CRLF injection, or log4shell-style attacks.
+
+patterns:
+  - pattern: 'log\.(info|warn|error|debug)\(.*request\.'
+    type: regex
+  - pattern: 'logger\.(info|warn|error|debug)\(.*\+.*request'
+    type: regex
+  - pattern: 'log\.(info|warn|error|debug)\(.*\+.*getParameter'
+    type: regex
+  - pattern: 'Logger.*\+.*getHeader'
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*//'
+    type: regex
+  - pattern: 'sanitize|escape|encode|replace'
+    type: regex
+
+fix_template: |
+  Sanitize user input before logging:
+
+  BAD:
+  logger.info("User login: " + request.getParameter("username"));
+
+  GOOD:
+  String safe = username.replaceAll("[\\n\\r]", "_");
+  logger.info("User login: {}", safe);
+
+  Use parameterized logging (SLF4J):
+  logger.info("User login: {}", sanitize(username));
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [logging, injection, crlf]

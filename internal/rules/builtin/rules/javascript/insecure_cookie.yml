@@ -1,0 +1,41 @@
+id: js-insecure-cookie
+version: "1.0"
+languages: [javascript, typescript]
+severity: MEDIUM
+category: session
+cwe: CWE-614
+owasp: "A07:2021"
+confidence: 0.70
+message: >
+  Cookie set without secure flags. Missing httpOnly, secure, or sameSite
+  attributes can expose session cookies to theft via XSS or MITM attacks.
+
+patterns:
+  - pattern: 'cookie\(.*httpOnly\s*:\s*false'
+    type: regex
+  - pattern: 'cookie\(.*secure\s*:\s*false'
+    type: regex
+  - pattern: 'document\.cookie\s*='
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*//'
+    type: regex
+
+fix_template: |
+  Set secure cookie flags:
+
+  Express.js:
+  res.cookie("session", token, {
+    httpOnly: true,    // Prevents XSS access
+    secure: true,      // HTTPS only
+    sameSite: "strict", // Prevents CSRF
+    maxAge: 3600000    // 1 hour
+  });
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [cookie, session, xss, csrf]

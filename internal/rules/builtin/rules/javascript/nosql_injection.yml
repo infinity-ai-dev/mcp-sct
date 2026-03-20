@@ -1,0 +1,51 @@
+id: js-nosql-injection
+version: "1.0"
+languages: [javascript, typescript]
+severity: HIGH
+category: injection
+cwe: CWE-943
+owasp: "A03:2021"
+confidence: 0.70
+message: >
+  Potential NoSQL injection. Passing user input directly to MongoDB query
+  operators can allow attackers to bypass authentication or extract data.
+
+patterns:
+  - pattern: '\.find\(\s*\{.*req\.(body|query|params)'
+    type: regex
+  - pattern: '\.findOne\(\s*\{.*req\.(body|query|params)'
+    type: regex
+  - pattern: '\$where.*req\.'
+    type: regex
+  - pattern: '\$regex.*req\.'
+    type: regex
+  - pattern: '\.aggregate\(.*req\.'
+    type: regex
+
+exclude_patterns:
+  - pattern: '^\s*//'
+    type: regex
+  - pattern: 'sanitize|validate|escape'
+    type: regex
+
+fix_template: |
+  Validate and sanitize MongoDB queries:
+
+  BAD:  db.users.find({ username: req.body.username, password: req.body.password })
+  (attacker sends: { "$gt": "" } as password to bypass auth)
+
+  GOOD: Validate input types before querying
+  const username = String(req.body.username);
+  const password = String(req.body.password);
+  db.users.find({ username, password });
+
+  Use mongo-sanitize:
+  const sanitize = require("mongo-sanitize");
+  db.users.find(sanitize(req.body));
+
+references:
+  - "https://cheatsheetseries.owasp.org/cheatsheets/Injection_Prevention_Cheat_Sheet.html"
+
+metadata:
+  author: MCP-SCT
+  tags: [nosql, mongodb, injection, owasp-top10]
