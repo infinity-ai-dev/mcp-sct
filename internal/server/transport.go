@@ -32,8 +32,10 @@ func (s *Server) ServeHTTP(cfg CloudConfig) error {
 		cfg.AllowedOrigins = []string{"*"}
 	}
 
-	// Create Streamable HTTP transport
-	httpServer := mcpserver.NewStreamableHTTPServer(s.mcpServer)
+	// Create Streamable HTTP transport (stateless for MCPize gateway compatibility)
+	httpServer := mcpserver.NewStreamableHTTPServer(s.mcpServer,
+		mcpserver.WithStateLess(true),
+	)
 
 	// Build middleware chain
 	var handler http.Handler = httpServer
