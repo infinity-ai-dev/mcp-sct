@@ -41,9 +41,9 @@ RUN apk add --no-cache \
 COPY --from=go-builder /build/mcp-sct /usr/local/bin/mcp-sct
 RUN chmod +x /usr/local/bin/mcp-sct
 
-# Copy Python AI bridge
-COPY --from=python-builder /python-install /usr/local
-COPY python/src/mcp_sct_ai /usr/lib/python3/mcp_sct_ai
+# Copy Python AI bridge deps + source into a single known path
+COPY --from=python-builder /python-install/lib /usr/local/lib
+COPY python/src/mcp_sct_ai /opt/mcp-sct-ai/mcp_sct_ai
 
 # Copy migrations
 COPY migrations /app/migrations
@@ -65,8 +65,9 @@ WORKDIR /home/mcp
 ENV MCP_SCT_MODE=cloud \
     MCP_SCT_ADDR=:8080 \
     MCP_SCT_AI_ENABLED=false \
+    MCP_SCT_AI_SCRIPT=/opt/mcp-sct-ai/mcp_sct_ai/server.py \
     MCP_SCT_LOG_LEVEL=info \
-    PYTHONPATH=/usr/lib/python3 \
+    PYTHONPATH=/opt/mcp-sct-ai:/usr/local/lib/python3.12/site-packages \
     TZ=America/Sao_Paulo
 
 EXPOSE 8080
