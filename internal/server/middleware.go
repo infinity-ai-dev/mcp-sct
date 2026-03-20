@@ -41,6 +41,14 @@ func AuthMiddleware(store auth.TokenStore, next http.Handler) http.Handler {
 		r.Header.Set("X-Project-ID", token.ProjectID)
 		r.Header.Set("X-Token-ID", token.ID)
 
+		// Pass through MCPize plan headers if present
+		// MCPize gateway sets these headers based on the user's subscription
+		if plan := r.Header.Get("X-MCPize-Plan"); plan != "" {
+			r.Header.Set("X-Plan", plan)
+		} else if plan := r.Header.Get("X-Subscription-Plan"); plan != "" {
+			r.Header.Set("X-Plan", plan)
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }

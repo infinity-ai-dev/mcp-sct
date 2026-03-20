@@ -9,6 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
 
+	"github.com/mcp-sct/mcp-sct/internal/auth"
 	"github.com/mcp-sct/mcp-sct/internal/bridge"
 	"github.com/mcp-sct/mcp-sct/internal/deps"
 	"github.com/mcp-sct/mcp-sct/internal/scanner"
@@ -184,6 +185,11 @@ func (s *Server) handleCheckDeps(ctx context.Context, req mcp.CallToolRequest) (
 }
 
 func (s *Server) handleSuggestFixes(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	// AI fix suggestions require Pro or Enterprise plan
+	if allowed, msg := auth.ToolAllowed("suggest_fixes", getPlan(req)); !allowed {
+		return mcp.NewToolResultText(formatUpgradeMessage("suggest_fixes", msg)), nil
+	}
+
 	var args tools.SuggestFixesArgs
 	if err := unmarshalArgs(req, &args); err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
@@ -200,6 +206,17 @@ func (s *Server) handleGenerateReport(ctx context.Context, req mcp.CallToolReque
 	if err := unmarshalArgs(req, &args); err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
+
+	// SARIF format requires Pro or Enterprise plan
+	if args.Format == "sarif" {
+		if !auth.RequiresPro(getPlan(req)) {
+			return mcp.NewToolResultText(formatUpgradeMessage("generate_report (SARIF)",
+				"SARIF report format requires a Pro or Enterprise plan. "+
+					"Use format='markdown' or format='json' on the Free plan, "+
+					"or upgrade at https://mcpize.com/mcp/mcp-sct")), nil
+		}
+	}
+
 	result, err := s.reportHandler.Handle(ctx, args)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("report error: %v", err)), nil
@@ -208,6 +225,11 @@ func (s *Server) handleGenerateReport(ctx context.Context, req mcp.CallToolReque
 }
 
 func (s *Server) handleRunSecurityTest(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	// External tool integration requires Pro or Enterprise plan
+	if allowed, msg := auth.ToolAllowed("run_security_test", getPlan(req)); !allowed {
+		return mcp.NewToolResultText(formatUpgradeMessage("run_security_test", msg)), nil
+	}
+
 	var args tools.RunSecurityTestArgs
 	if err := unmarshalArgs(req, &args); err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
@@ -238,6 +260,33 @@ func (s *Server) Shutdown() {
 	if s.bridgeMgr != nil {
 		s.bridgeMgr.Stop()
 	}
+}
+
+// getPlan extracts the subscription plan from the MCP request headers.
+// MCPize gateway sets X-MCPize-Plan or X-Subscription-Plan headers.
+// Falls back to "enterprise" for local/stdio mode (no restrictions).
+func getPlan(req mcp.CallToolRequest) string {
+	// Check MCPize gateway headers
+	for _, header := range []string{"X-Plan", "X-MCPize-Plan", "X-Subscription-Plan"} {
+		if plan := req.Header.Get(header); plan != "" {
+			return plan
+		}
+	}
+	// Local/stdio mode: no plan header = full access
+	return auth.PlanEnterprise
+}
+
+func formatUpgradeMessage(tool, reason string) string {
+	return fmt.Sprintf("## Upgrade Required\n\n"+
+		"**Tool:** `%s`\n\n"+
+		"%s\n\n"+
+		"### Available Plans\n\n"+
+		"| Plan | Price | Includes |\n"+
+		"|------|-------|----------|\n"+
+		"| Free | $0/mo | scan_code, check_dependencies, get_security_guidelines |\n"+
+		"| **Pro** | **$10/mo** | All tools + SARIF reports + run_security_test |\n"+
+		"| **Enterprise** | **$25/mo** | All tools + AI suggestions + 1M requests |\n",
+		tool, reason)
 }
 
 func unmarshalArgs(request mcp.CallToolRequest, target interface{}) error {
