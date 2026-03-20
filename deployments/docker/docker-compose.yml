@@ -1,7 +1,7 @@
 version: "3.7"
 
 # Docker Compose - MCP-SCT
-# Uso: docker-compose -f docker-compose.yml up -d
+# Deploy: docker stack deploy -c docker-compose.yml mcp_sct
 
 services:
   #########################################################
@@ -9,6 +9,7 @@ services:
   #########################################################
   mcp_sct_server:
     image: infinitytools/mcp-sct:latest
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
     networks:
       - network_public
     environment:
@@ -39,16 +40,49 @@ services:
       #########################################################
       # Configuração do AI Bridge (opcional) ##################
       #########################################################
-      - MCP_SCT_AI_ENABLED=false
+      - MCP_SCT_AI_ENABLED=true
       # - OPENAI_API_KEY=sk-...
-      # - ANTHROPIC_API_KEY=sk-ant-...
+      - ANTHROPIC_API_KEY=YOUR_ANTHROPIC_API_KEY_HERE
       # - OLLAMA_HOST=http://ollama:11434
       #########################################################
       # Logging e Timezone ####################################
       #########################################################
       - MCP_SCT_LOG_LEVEL=info
       - TZ=America/Sao_Paulo
-    restart: unless-stopped
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+      labels:
+        #########################################################
+        # Configuração do Traefik ###############################
+        #########################################################
+        - traefik.enable=true
+        - traefik.http.routers.mcp_sct_server.rule=Host(`mcp.sct.mayacrm.shop`)
+        - traefik.http.routers.mcp_sct_server.entrypoints=websecure
+        - traefik.http.routers.mcp_sct_server.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.mcp_sct_server.service=mcp_sct_server
+        - traefik.http.services.mcp_sct_server.loadbalancer.server.port=8080
+        - traefik.http.services.mcp_sct_server.loadbalancer.passHostHeader=true
+      update_config:
+        parallelism: 1
+        delay: 15s
+        order: start-first
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 5
+        window: 60s
 
 networks:
   network_public:
