@@ -1,1 +1,1 @@
-FROM infinitytools/mcp-sct@sha256:d9f12cb5705d3adac79ae765a310fca9159d05da07c725742a169e6f35590af6
+FROM infinitytools/mcp-sct@sha256:bf0102b476372c9d109ac32b94703eff004df359adf3d6bd9cea6e32f286ae2b
