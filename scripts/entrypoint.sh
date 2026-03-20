@@ -165,6 +165,13 @@ else
     log_info "Using in-memory storage"
 fi
 
+# MCPize sets PORT env var - use it if MCP_SCT_ADDR not explicitly set
+if [ -n "$PORT" ] && [ "$MCP_SCT_ADDR" = ":8080" ]; then
+    export MCP_SCT_ADDR=":$PORT"
+    log_info "Using MCPize PORT: $PORT"
+fi
+
+log_info "Listening on ${MCP_SCT_ADDR}"
 log_info "============================================"
 log_info "Starting MCP-SCT server..."
 log_info "============================================"
