@@ -40,7 +40,7 @@ services:
       # Usuário do banco
       - DB_USER=postgres
       # Senha do banco
-      - DB_PASSWORD=7y8auHScpUTrQWhjbrlu8yc0RzNib2wn
+      - DB_PASSWORD=
       # SSL mode do PostgreSQL
       - DB_SSLMODE=disable
       #########################################################
